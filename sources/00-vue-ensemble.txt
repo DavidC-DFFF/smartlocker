@@ -1,0 +1,88 @@
+Architecture générale
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Perimetre et principe
+
+
+
+Maquette pedagogique pour E2, E31 et E32, seances de trois heures. Le projet contient une centrale et deux instances de la meme carte de casier, CASIER_A et CASIER_B. Les 28 cartes supplementaires sont des repetitions de cette carte reference, raccordees par le faisceau externe : cinq cartes par rangee sur chacun des six bus. Cette extension est un objectif d'essai, pas une capacite certifiee. Les deux cartes de demonstration occupent la premiere rangee. Les adresses usine DS2413P+ sont conservees ; aucune adresse n'est attribuee selon l'ordre de recherche.
+
+CONTROL centralise les etats par ESP32 et communique en Wi-Fi avec une application Flask sur Raspberry Pi. BUS distribue les six lignes independantes et protege leurs alimentations. POWER fournit le 3,3 V depuis une alimentation externe regulee 5 V. Chaque casier associe le DS2413, la signalisation et une barriere optique a seuils resistifs. LOCK pilote un unique dispositif mecanique assurant le verrouillage global ; ce n'est pas une commande individuelle de 30 serrures. Le Raspberry Pi, ses alimentations, le point d'acces Wi-Fi, le faisceau et le mecanisme sont externes au projet.
+
+
+
+Partition fonctionnelle et masses
+
+
+
+POWER garde la regulation et ses condensateurs dans une meme responsabilite de stabilite. CONTROL possede le traitement, l'appairage et la programmation. BUS possede les interfaces longues, leurs tirages et leur distribution, separables du logiciel par les six lignes de GPIO. Le comparateur, le recepteur et ses seuils restent avec le DS2413 de chaque casier pour conserver la responsabilite du bruit et de l'hysteresis locale. LOCK garde la boucle inductive, sa protection et le retour de position. GND est le retour logique/optique commun, suppose calme grace a l'absence de convertisseur a decoupage sur cette maquette. PGND est le retour de puissance du verrou ; LOCK possede son unique liaison par resistance nulle avec GND. Ne pas ajouter de liaison ailleurs, notamment par les alimentations ou le chassis. Deux alimentations externes flottantes sont requises, le raccordement de leurs retours etant assure uniquement ici.
+
+
+
+Hypotheses explicites et informations manquantes
+
+
+
+Utilisation en interieur sec, 10 a 35 degres C, sans exigence IP ni certification de securite ou d'antivol. Alimentation logique certifiee TBTS, regulee 5 V +/-2%, 3 A, limitee en courant ; alimentation du verrou separee TBTS 12 V +/-5%, au moins 1,5 A, limitee en courant. Aucune charge de telephone. Les dimensions, la largeur du faisceau, les longueurs de nappes et sections, l'ambiance lumineuse et le dispositif de verrouillage restent a fournir. Hypotheses initiales : nappe d'une rangee <=3 m, derivations <=0,10 m, barriere <=100 mm avec tubes opaques ; toutes ces valeurs sont a verifier. Un guide mecanique oblige tout telephone depose a couper le faisceau. Le resultat signifie objet present, jamais identification d'un telephone.
+
+Hypothese du verrou : solenoide 12 V, <=1 A continu, verrouille lorsqu'alimente, deverrouille lorsqu'il ne l'est plus, contact de position sec isole. LOCK est dimensionne seulement pour ce cas. Courant d'appel, inductance, energie et temps de relachement doivent etre mesures avant raccordement du verrou reel. Une motorisation reversible, une serrure bistable ou 30 electroaimants imposent une revision. Une liberation mecanique manuelle est necessaire ; cette maquette n'est pas un equipement de securite.
+
+
+
+Faisceau, tirage et bilan d'energie
+
+
+
+Une nappe principale continue DATA/POWER/GND dessert cinq casiers, chaque carte etant connectee par une seule derivation. Aucun trajet serie a travers les cartes : retirer une carte ne coupe pas la nappe. Aucun terminateur en bout. DATA est tire vers 3,3 V, non vers POWER ; le DS2413 est alimente uniquement de facon parasite par DATA. POWER transporte la tension logique issue du 5 V pour les emetteurs IR, comparateurs et LED. Les sorties PIO sont a drain ouvert ; PIOA absorbe le courant de signalisation et le verrou de PIOB reste toujours a 1 pour l'entree. Le comparateur attaque PIOB par une resistance limitant une contention accidentelle.
+
+Le tirage initial de chaque bus est 2,2 kohms, tolerance 1%, conforme a la plage recommande par le fabricant du DS2413. Le GPIO fonctionne exclusivement en drain ouvert ; aucun niveau haut force. La resistance serie du depart est limitee a 33 ohms. A 3,217 V minimum, la marge sur la tension parasite minimale 2,8 V est d'environ 0,42 V avant chute de ligne : elle doit etre controlee a l'oscilloscope avec cinq cartes et Wi-Fi actif. Standard speed seulement, repos haut et recuperation initiale de 20 us entre bits, extensible. Avec une hypothese de 100 pF/m et 200 pF pour protections et interface, la nappe seule donne environ 0,5 nF et une constante RC de 1,1 us ; ceci exclut les effets dynamiques des esclaves et n'est pas une preuve de capacite. Les 800 pF du DS2413 decrivent le comportement initial de son alimentation parasite, pas une capacite permanente a multiplier par cinq. Valider la charge reelle et le rechargement avant d'augmenter le nombre de cartes.
+
+Budget de conception par carte : environ 22 mA habituel, 35 mA de provision maximale, emetteur IR permanent et signalisation allumee. Le casier ne consomme pas son courant optique sur DATA. Deux cartes : environ 0,30 A a 5 V avec centrale a 0,25 A moyen, et <=0,60 A avec provision de 0,50 A pour la centrale. Trente cartes : environ 0,93 A moyen, <=1,60 A en provision simultanee ; choisir 5 V/3 A, soit 15 W disponibles pour environ 8 W de budget maximal. Chaque rangee reserve 0,175 A pour cinq cartes et possede un fusible rapide de 0,5 A. Le 3,3 V reserve 0,55 A incluant radio et six bus. POWER utilise un regulateur lineaire : environ 0,4 W moyen et <1 W a 0,5 A, sous reserve du cuivre et de la mesure thermique. Une diode d'entree et les pertes du faisceau diminuent POWER ; objectif de 3,8 V minimum sur la carte la plus eloignee, condition d'acceptation a mesurer et non garantie sans longueur/section reelles. Le verrou ajoute au plus 12,6 W sur son alimentation distincte ; le Pi n'est pas inclus.
+
+Le fusible de rangee limite un defaut grave de POWER, sans isoler instantanement un casier. Un court-circuit DATA rend toute sa rangee indisponible, mais les autres bus restent independants. Un contact DATA/POWER peut injecter une tension dangereuse pour l'ESP32 : les protections ESD ne constituent pas une protection garantie contre cette erreur de cablage. Connecteurs etiquetes, test de continuite et de polarite avant alimentation, raccordement hors tension uniquement.
+
+
+
+Proprietaires uniques des acces externes
+
+
+
+| Acces | Proprietaire | | Alimentation logique 5 V et retour | POWER | | Six departs de rangee DATA/POWER/GND | BUS | | Derivation de la premiere carte | CASIER_A | | Derivation de la seconde carte | CASIER_B | | Adaptateur UART 3,3 V, reset et boot | CONTROL | | Commutateur d'appairage du panneau, contact sec vers masse | CONTROL | | Alimentation 12 V et retour de puissance | LOCK | | Deux conducteurs du solenoide et contact sec de position | LOCK | Les bornes du Raspberry Pi ne sont pas raccordees aux nappes ; la liaison est radio. Emetteur et recepteur optiques sont les composants de chaque carte de reference ; leur placement final peut necessiter une carte longue ou un montage mecanique de leurs pattes, a confirmer avant implantation, sans changer les valeurs supposees. Les deux cartes possedent leur propre connecteur de derivation ; cela n'est pas un second proprietaire des connecteurs de depart de BUS.
+
+
+
+Logiciel ESP32 et appairage propose
+
+
+
+Un gestionnaire par bus serie les transactions, une tache de detection echantillonne chaque casier au moins deux fois par seconde, un filtre temporel exige 300 ms de stabilite, une tache reseau publie les etats sans bloquer les creneaux 1-Wire. Ne pas intercaler journalisation ou appel Wi-Fi dans une transaction. La recuperation de 20 us doit etre appliquee dans le moteur bas niveau apres chaque bit, en adaptant ou choisissant une implementation OneWire qui expose ce reglage ; un simple delai entre commandes ne suffit pas. Les timings fixes de la bibliotheque candidate ne sont pas supposes satisfaire cette condition sans examen et mesure. La bibliotheque TechchatCom OneWire-DS2413-Arduino-Library est candidate, non validee sur ESP32 ; compiler et tester avec versions figees du coeur Arduino ESP32 et de OneWire. getPIO() vaut 0xFF en erreur sans actualiser isError() : tester directement le retour ; le bit 2 represente l'etat physique de PIOB. Pour PIOA actif bas, writePIO(0x02) allume et writePIO(0x03) eteint tout en maintenant PIOB libere. Initialiser chaque module avec 0x03, verifier l'ACK et la coherence du statut. Verifier le CRC de chaque ROM, sa famille et l'integrite du statut/complement ; trois echec consecutifs rendent l'etat inconnu/non joignable, jamais absent. Reessayer avec temporisation et rescan periodique.
+
+Le commutateur autorise un appairage local, le numero 1 a 30 est selectionne dans l'interface web ; conserver l'autorisation locale comme garde. Distinguer inventaire temporaire et table persistante numero/bus/ROM. Observer les modules non enregistres, exiger une transition stable absent vers present unique pendant 300 ms ; si plusieurs candidats, attendre que tous soient revenus absents puis une nouvelle transition unique. Expiration apres 60 s, aucune modification sur erreur ou expiration. Confirmation lumineuse apres ecriture atomique en NVS d'une table versionnee avec controle d'integrite ; verifier l'association au redemarrage. Le remplacement requiert une action explicite sur un numero existant, preservation de l'ancien enregistrement jusqu'a validation unique et sauvegarde du nouveau ; journaliser ancien/nouveau ROM et bus. Ne jamais reaffecter automatiquement sur disparition ou ordre de decouverte.
+
+
+
+HTTP/JSON et verrouillage
+
+
+
+Proposition : ESP32 publie chaque seconde POST /api/v1/telemetry vers Flask, avec version, device_id, boot_id, seq, uptime_ms, pairing, lock_command, lock_feedback, lockers contenant number, bus, rom, present (true/false/null), reachable et age_ms. Flask acquitte les sequences, ignore les doublons et marque la centrale hors ligne apres 5 s ; aucune valeur stale n'est presentee comme fraiche. Flask envoie une commande idempotente authentifiee PUT /api/v1/lock sur ESP32, avec request_id, desired (locked/unlocked) et expiration courte. Reponse accepted distincte de confirmed par le contact. Deux secondes sans retour conforme donnent un defaut etat inconnu ; l'absence du contact ne prouve pas une panne identifiable. API d'appairage POST /api/v1/pair avec numero, operation et jeton, refusee sans commutateur. Le reseau local est isole, WPA2, secret partage et filtrage IP ; HTTP clair ne convient pas a un reseau hostile, TLS est a ajouter pour exploitation hors maquette.
+
+Le verrou reste a la derniere consigne locale pendant une perte Wi-Fi tant que l'ESP32 est sain, sans deverrouillage automatique a distance. Au demarrage, reset, watchdog ou perte d'alimentation, la commande materielle est inactive et le mecanisme suppose deverrouille. Reprendre une consigne seulement apres initialisation, pas depuis une ancienne commande reseau. Afficher separement demande, retour et etat inconnu. Le contact sec ferme uniquement en position verrouillee ; contact ouvert signifie non confirme, y compris fil coupe.
+
+
+
+Essais et criteres avant extension
+
+
+
+Mesurer niveaux optiques, seuils montants/descendants et temporisation sur deux casiers, faisceau libre et coupe, tailles/orientations de telephone, objets autres, soleil et eclairage secteur, alignement et temperature. Exiger des marges de tension de 0,3 V de part et d'autre des seuils ; les seuils calcules ne garantissent pas le bilan optique.
+
+Sur une nappe reelle, tester successivement un, deux, cinq puis dix modules sur un meme bus en essai de surcharge, sans annoncer dix comme capacite normale. Mesurer haut parasite, bas, temps de montee au seuil utile, recuperation apres zero et reset, erreurs de lecture/ecriture, CRC et reconnexion, avec Wi-Fi intense et LED actives ; viser aucun faux etat sur trois heures et publier le nombre de transactions et erreurs brutes. Si cinq modules ne passent pas, allonger la recuperation, reduire longueur/capacite, essayer 1,5 kohms dans les limites de courant, puis envisager un maitre actif avant de modifier l'architecture.
+
+Injecter absence de carte, DATA bloque bas, POWER coupe, fusible ouvert, reboot pendant appairage, doublon de commande, perte Pi/Wi-Fi, contact verrou coupe et defaut de charge. Un bus en panne ne doit pas bloquer les cinq autres ; les commandes de verrou ne doivent pas dependrere d'une presence erronee. Verifier une disparition comme inconnue et la reprise sans nouvelle affectation. Tester courant d'appel, temperature LDO/transistor, tension minimale au cinquieme casier, transitoires du verrou et retour de position. Dix cartes physiques d'essai sont une etape future ; les deux cartes de cette maquette ne suffisent pas a la realiser.
+

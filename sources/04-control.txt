@@ -1,0 +1,32 @@
+CONTROL - Centrale ESP32
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Centrale et interfaces
+
+
+
+U2 est un ESP32-WROOM-32E a antenne integree. Les six lignes OW_GPIO1, OW_GPIO2, OW_GPIO3, OW_GPIO4, OW_GPIO5 et OW_GPIO6 utilisent GPIO25/26/27/18/19/21, configurees uniquement en drain ouvert, sans sortie haute active. Les tirages etprotections sont dans BUS. GPIO32 porte LOCK_CMD, GPIO33 lit LOCK_SENSE. GPIO34 entree seule lit CTRL_PAIR depuis le commutateur central externe sur J3 ; R3 est indispensable car pas de tirage interne surGPIO34. Avec contact ferme, diviseur R3/R4 donne environ0,30V a3,3V, sousle seuil bas ESP32 de0,25Vdd. C7 filtre environ1ms et lelogiciel impose50ms d'antirebond avant autoriser l'appairage. D2 traite les manipulations ESD, pas une tension externe maintenue.
+
+
+
+Alimentation, demarrage et programmation
+
+
+
+C4 etC5 sont au plus pres du module, capacite effective C4>=10uF a3,4V. POWER reserve>=0,55A, dont au moins0,5A disponible pour la radio ; ne pas confondre provision etconsommation moyenne0,25A estimee. R1/C6 donnent retard EN environ10ms ; verifier au moins50us de rails stables avant EN etreset>=50us. BOOT_MODE normalement haut parR2, GPIO2 bas parR5. J2 est le seul acces UART0 etreset/boot, broches1et6 masse,2 entreeUART_RX,3 sortieUART_TX,4 RESET_EN,5 BOOT_MODE. Adaptateur3,3V uniquement, carte alimentee par POWER ; aucune borne d'alimentation sur J2. Reset etboot doivent etre pilotes a drainouvert ou parcontact versGND, pas a5V. Maintenir bootbas pendantreset puis1ms apres liberation pour entrer en telechargement. Les broches non utilisees, ycompris NC, sont intentionnellement libres. Respecter la zone sanscuivre etdegagee de l'antenne 32E, au bord de carte, loin du verrou/cables.
+
+
+
+Structure du programme et acceptance
+
+
+
+La specification de taches, appairage, table NVS atomique etHTTP/JSON est portee par le contrat d'ensemble. Initialiser LOCK_CMD bas avant mode sortie, configurer les six DATA en relachement, attendre stabilisation optique300ms puis parcourir ROM CRC/famille ; ne pas activer verrou avant initialisation. La bibliotheque candidate doit etre compilee puis mesuree sous chargeWi-Fi ; isError() ne validepas getPIO(), tester0xFF etbit2. Aucune ecriturePIOA sans PIOB latch1. Serialiser les transactions parbus, appliquer recuperation20us initiale extensible, tache reseau separee.
+
+Une coupure POWER locale ne peut pas etre diagnostiquee par ce circuit reserve a2PIO ; l'optique peut etre fausse meme si ROM repond, limitation a documenter dans la supervision d'essai. Lecontactdeverrou ouvert signifie nonconfirme, pas preuve de position ouverte. Des donnees stale ou erreurs de statut deviennent inconnues. Appairage exigecommutateur actif, numeroexplicite, transition absentverspresent unique etstable, expiration60s, ecritureatomique etconfirmationLED. PerteWi-Fi conserveconsigne locale, reset/watchdog deverrouille dans l'hypothese du mecanisme. Tester reset, NVS interrompue, sixbus souserreurs, compatibiliteWi-Fi, programmeur et3V3 transitoire. Aucun firmware compile ou essai physique n'est revendique par ces schemas.
+

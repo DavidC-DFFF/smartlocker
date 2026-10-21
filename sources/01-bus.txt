@@ -1,0 +1,36 @@
+BUS - Distribution des six rangées
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Six departs independants
+
+
+
+J20 a J25 sont les uniques connecteurs de depart de rangee. Chaque connecteur porte DATA en1, POWER en2 et GND en3. La nappe principale continue est externe et dessert cinq derivations courtes, dont deux cartes de demonstration sur OW1. Les cartes ne portent jamais la continuite de la nappe. Pas de terminaison en bout et raccordement hors tension uniquement. Les six lignes sont independantes, mais partagent les alimentations et GND.
+
+
+
+Dimensionnement des lignes
+
+
+
+R20 a R25 tirent DATA vers 3V3, pas vers VLOGIC. R26 a R31 sont des resistances serie de33 ohms entre GPIO et nappe, sans conversion de niveau. Les GPIO sont exclusivement drain ouvert, relaches pour lire/recharger le DS2413. Un seul tirage par bus, aucun tirage sur les cartes. Maximum par ligne a3,3825V avec resistance minimale2178ohms :1,553mA, soit9,32mA pour six lignes bloquees basses. Puissance tirage<5,3mW,0603 largement suffisant. Le33ohms ajoute environ51mV au niveau bas pour1,55mA ; verifier VOL total  <seuil bas et haut> =2,8V au DS le plus eloigne. Alimentation3V3 minimum3,2175V laisse0,4175V pour charges/chutes au repos.
+
+R de tirage2,2k est le point initial recommande ; recovery initial20us, standard speed seulement. D20 a D25 apportent20pF typiques par depart selon le datasheet, plus20pF par carte ; aucune capacitance0,3pF catalogue n'est retenue. Hypothese de cable100pF/m,3m et ensemble d'environ200pF hors cable donne C 0,5nF etRC 1,1us, avant comportements dynamiques des esclaves. Pour un simple RC de0,5nF, un depart de0V a3,2175V atteint2,8V en environ2,25us, mais cette estimation ne garantit pas la recharge parasite ni le seuil d'echantillonnage. Les800pF du DS2413 sont un effet initial, jamais multiplies comme charge permanente. Oscilloscope requis au debut et a la fin du cable, un/deux/cinq puis dix modules en surcharge. Si necessaire augmenter la recuperation, reduire le cable puis tester1,5k dans les limites de sink ; pas de tirage actif ajoute ici.
+
+
+
+Distribution et pannes
+
+
+
+F20 a F25 sont des fusibles rapides0,5A/32V sur POWER, provisionnormale0,175A par rangee. Resistance froide typique0,870ohm a25C etfaible courant, chute estimee0,152V a0,175A, pas de maximum garanti. La table de derating indique environ0,49A a35C, donc marge confortable sur charge normale. Le budget local3,8V est une condition d'acceptation a mesurer, avec longueurs et section reelles : ni la chute des fusibles ni celle du cable ne sont bornees sans ces donnees. Les0,5A declares sont le calibre de chaque depart, pas un regulateur de courant ni une promesse3A simultanes ; aggregate normal1,05A, capacite VLOGIC2A.
+
+Les fusibles limitent les consequences d'un defaut grave POWER si le courant de source permet leur ouverture. MeltingI2t typique0,0068A2s au test5A et pouvoir de coupure50A/32V ; comparer les impulsions d'inrush des cartes, aucun temps de coupure systeme garanti. L'alimentation limitee en courant reste necessaire. DATA bloque bas affecte toute sa rangee sans couper les cinq autres, un court-circuit POWER peut faire tomber la tension commune avant fusible. Une permutation DATA/POWER peut endommager l'ESP32 : les TVS ESD ne la rendent pas sure. Etiquetage et detrompage du faisceau, continuite/polarite hors tension avant raccordement.
+
+D20 a D25 sont des protections de manipulation, non une garantie de tenue des circuits a toute decharge ; clamp10Vtyp a9A8/20us est au-dessus de l'absmax GPIO. Ne pas annoncer immunite certifiee. C20 est un reservoir de VLOGIC uniquement ; aucun condensateur sur DATA. Essai trois heures sous trafic Wi-Fi, LED et verrou commutes, mesure des niveaux, recovery et erreurs brutes ; criteres aucun fauxetat, disparition signalee inconnue, reprise sans reappairage et pas de blocage des autres bus.
+

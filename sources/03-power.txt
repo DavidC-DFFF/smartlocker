@@ -1,0 +1,32 @@
+POWER - Alimentation logique
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Fonctionnement
+
+
+
+J1 est l'unique entree logique du projet. D1 bloque une inversion de polarite, au prix de la chute de tension de VLOGIC ; il ne protege pas d'une tension d'entree excessive. La source externe doit etre 5 V +/-2%, flottante, limitee a 3 A. U1 genere 3V3 avec reservoir amont et decouplage aval ceramique. Aucun chemin d'alimentation par le connecteur de programmation.
+
+
+
+Dimensionnement
+
+
+
+Le budget simultane de trente casiers et centrale est <=1,60 A en entree, dont <=0,55 A sur 3V3. Avec chute de diode conservatrice 0,55 V a 3 A, VLOGIC reste >=4,35 V pour VIN5=4,9 V, avant pistes. La marge LDO reste >=4,3-(3,3825+0,4)=0,5175 V ; 0,4 V est le maximum de dropout donne a 1 A utilise conservativement. U1 fournit 1 A catalogue mais seulement 0,7 A de capacite sont engagees ici, charge prevue 0,55 A. C1 doit conserver >=33 uF a 5,1 V afin d'etre au moins aussi grand que les capacites nominales aval de regulation et radio, C2 >=5 uF a 3,4 V, exigences d'approvisionnement a confirmer. La stabilite demande >=1 uF effectif en sortie et ESR<=1 ohm ; les ceramiques choisies satisfont cette intention sous reserve de leurs courbes de biais.
+
+Puissance LDO conservatrice a 0,55 A : (5,1-3,2175)*0,55+0,002 <1,04 W. Au theta de test fabricant 62 degres C/W, jonction environ100 degres C a35 degres C ambiant ; a0,25 A moyen environ65 degres C. Ce n'est pas une garantie pour notre cuivre : grande plage GND sur la languette, vias thermiques, viser theta<=75 degres C/W et mesurer pour rester sous115 degres C en essai. D1 peut dissiper0,88 W avec 1,60 A et0,55 V, necessitant cuivre sur ses deux bornes et controle thermique ; viser jonction<125 degres C. Pas de convertisseur ni surveillance additionnelle pour cette maquette.
+
+
+
+Acceptation
+
+
+
+Verifier inversion avec source limitee, rampe, tension 3V3 et creux pendant emission Wi-Fi, temperature apres trois heures au budget maximal. Un bloc secteur non regule ou12 V sur J1 n'est pas couvert. Les condensateurs sont non polarises ; la masse reste GND et n'est pas reliee a PGND dans ce module.
+

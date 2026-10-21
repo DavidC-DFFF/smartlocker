@@ -1,0 +1,36 @@
+CASIER_B - Seconde carte
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Seconde carte de demonstration
+
+
+
+Identique electriquement a CASIER_A, avec ROM propre et references distinctes. J201 est sa seule derivation a la nappe continue, jamais en serie. U201 n'a pas de Vcc : alimentation parasite OW1 et deux masses GND. PIOA absorbe la signalisation active bas, PIOB reste latch1 et lit la sortie de U202 a travers R207. Initialiser0x03, allumer par0x02 ; getPIO()==0xFF signifie erreur, pas absence. Etatphysique bit2 haut=absent etbas=objetpresent apres300ms stables. L'association numero/bus/ROM est sauvegardee sur ESP32 independamment de l'inventaire.
+
+Q201 tire B_OPT bas en lumiere, R203 remonte quand le faisceau est coupe ; U202 compare au seuil B_REF avec retour positif. Aucun filtrage ou decouplage ajoute sur DATA. Les capacites d'alimentation sont uniquement sur ROW1_POWER. C203 avec R203 donne environ0,47ms de filtrage. Guide d'insertion et tubes opaques obligatoires ; 100mm est une hypothese d'essai, pas une portee certifiee. Emetteur etrecepteur sont des composants de cette carte, leur disposition mecanique reste a confirmer.
+
+
+
+Dimensionnement et seuils
+
+
+
+Iir=(Vpower-Vf)/R201, environ20mA sous4,7V avec hypothese Vf1,1V. Comme aucun minimum Vf n'est garanti a20mA, Iir<=5,1/178,2=28,62mA etP de R201<=0,146W ;1206 de0,25W pour prototype. R202 borne le courant signalisation <=5,16mA meme avec diode court-circuitee. Provision35mA par carte, typique22mA. R207 limite une contention accidentelle a environ5mA, ne jamais utiliser PIOB comme sortie.
+
+Vref=(Vpower/R204+Vout/R206)/(1/R204+1/R205+1/R206)=0,404858 Vpower+0,190283 Vout. Seuil montant du collecteur avec sortiehaute et descendant avec sortie basse. Inclure Vos etVh interne : haut=Vref(Voh)+Vh/2+Vos, bas=Vref(Vol)-Vh/2+Vos selon convention d'offset. A5V, sorties ideales0/5V, Vh3,3mV typique etVos0 : haut2,97736V, bas2,02264V ; avec Vol0,05V etVoh4,95V supposes : haut2,96784V, bas2,03215V. A4,7V sorties ideales : haut2,79882V, bas1,90118V. Resistances1%, niveauxVoh>=Vpower-0,2V etVol<=0,2V a2mA, offset+/-7mV etVhmax6,5mV de la table25C/Vcm0 donnent enveloppes d'etude a5V environ2,903..3,010V haut et1,990..2,097V bas. Le mode commun reel etla plage10..35C ne sont pas couverts par ces garanties ; mesurer les deux seuils avec alimentation locale etverifier marges0,3V.
+
+A5V, viser B_OPT<1,72V libre (Iphoto>70uA) et>3,28V coupe (Iphoto<36,6uA), a recalculer pour3,8..5,1V. Darkcurrent200nA max a25C/20V donnerait9,4mV dans47k, mais ne borne ni soleil ni chaud. Les intensites IR a100mA etcourants photo a1mW/cm2 ne garantissent pas l'alignement/distance a20mA.
+
+
+
+Conditions et essais
+
+
+
+La TVS D203 apporte20pF typiques selon son datasheet, non0,3pF catalogue ; manipulation ESD seulement, pas protectiongarantie contre inversion DATA/POWER. Deconnexion hors tension. Une coupure POWER peut laisser DS joignable avec detectionindeterminee : absence de monitoring local, ne pas promettre diagnostic de cette panne. Evaluer avec la premiere carte lumiereambiante, alignement, alimentationminimale, essais3h et remplacements ; extension aux autres rangees en copiant cette carte et choisissant le depart par le faisceau, sans changer le numero de ROM.
+

@@ -1,0 +1,34 @@
+LOCK - Verrouillage global
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Hypothese mecanique et commande
+
+
+
+Un seul solenoide externe assure le verrouillage global mecanique,12V<=1A continu, energise=verrouille. Ce circuit ne pilote ni moteur reversible ni serrure bistable. J4 recoit l'alimentation flottante12V et son retourPGND. F1 puisD3 protegent le depart LOCK_PLUS contre defaut grave et inversion. Q1 commute LOCK_RETURN versPGND, commande LOCK_CMD activehaut parR6. R7 maintient la grille inactive pendant reset/perte3V3. La premiere action logicielle doit etre consignebas ; reset etwatchdog relachent le verrou. Ne pasrejouer une anciennecommande reseau au demarrage.
+
+D4 recircule le courant inductif a l'arret, avecboucle solenoide/diodela pluscourte possible ; sa cathode rejoint LOCK_PLUS et son anode LOCK_RETURN. Cette roue libre ralentit le relachement : verifier letemps compatibleavec mecanisme ettimeoutdeposition2s. D5 traite les transitoires d'alimentation, non l'energie principale du solenoide. Aucun calculd'energie fiable sansinductance etfrequence ; ces informations etlecourantd'appel sont manquantes. Ne raccorder le verroureel qu'apres leurmesure.
+
+
+
+Marges et retours
+
+
+
+Q1 est30V avecRdsmax48mohms aVgs2,5V25C. Lelectrique gate>=3,217V en reposnormal estau-dessus dupointdequalification2,5V ; absence de valeur exacte a3,3V ne justifie pas un meilleurRds. Hypothese conservative chaud0,1ohm : P<=0,1W a1A ethausse~9degC autheta89degC/W de la table, a verifier sur cuivre. En roue libre normale Vds<=12,6+0,55=13,15V environ. Le clamp24,4V duTVS laisse encore la diode et lesinductances de piste a inclure sous30V ; mesurer pour viserVds<26V lorsdes perturbations. D3 peutdissiper0,55W a1A conservativement, D4 porte1A initial a chaque arret avecpertes dependantes deL etfrequence. Borniers8A catalogue etpistes>=1,5A continu. F1 calibre1,5A/32V rapide ; une source limitee peut nepas donner lecourantnecessairepourlefairefondre, donc la limitation amont reste necessaire etaucun temps de coupuregaranti n'est revendique.
+
+PGND contient tout le retourdu solenoide ; R10 estl'unique bond nul avecGND, placepresdelasourceQ1 maisen dehorsdu trajetdecourantdulock. L'alimentation5V,12V etlescontacts doiventetre flottants/non reliesau chassisailleurs. Le courantduverrou ne traversepas la masseoptique/logique ; pasd'autrebondpossible via cablefeedback ou alimentation externe.
+
+
+
+Retour de position
+
+
+
+J6 accueille uncontactsecdedie qui ferme LOCK_CONTACT versGND uniquement en positionverrouillee. R8/R9 etC10 forment tirage etfiltrage environ1ms ; niveauferme~0,3V a3,3V, filtre logiciel50ms. LOCK_SENSE basconfirmelaposition ; ouvert n'est paspreuve de deverrouillage etfilcoupeindiscernable. D6 protege contre manipulationESD mais pasinjection12V ; contactsecisole<=1m exclusivement. Si alimentation12V manque, lefeedback peutrester utilisable mais la commande ne fournitaucunenergie. Si3V3 manque, touteinterpretationlogicielle estinvalide. Publier demande/confirmation/etat inconnu distincts. Tester touteslescombinaisons d'alimentation, reset souslock, perteWi-Fi, tension/courant/flyback etcontactcoupe avantusagepedagogique. Liberation mecanique manuelle requise.
+

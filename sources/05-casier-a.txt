@@ -1,0 +1,44 @@
+CASIER_A - Carte de référence
+
+
+
+Notice technique observée le 17 octobre 2026.
+
+
+
+Carte reference et detection
+
+
+
+J101 est une derivation unique, jamais un passage serie de la nappe. U101 est alimente uniquement par OW1 ; ses deux masses sont raccordees, sa broche non connectee reste ouverte. PIOA absorbe le courant de D102, allumage actif bas. PIOB reste libere, verrou de sortie1, et lit U102 par R107. Initialiser a0x03 ;0x02 allume la signalisation sans fermer PIOB. Le bit2 du statut physique vaut1 faisceau libre,0 faisceau coupe ; donc present=(statut&4)==0, apres validation de lecture et stabilite300ms. Un module non joignable reste inconnu.
+
+D101 est un emetteur IR permanent. Q101 abaisse A_OPT lorsqu'il recoit la lumiere ; R103 le ramene vers ROW1_POWER quand le faisceau est coupe. U102 est un comparateur CMOS push-pull a entree rail-a-rail avec retour positif sur A_REF. C103 filtre les variations rapides de lumiere (tau de charge environ0,47ms), sans rendre l'optique insensible au soleil. Le guide du casier doit assurer la coupure, tubes noirs autour du recepteur ; portee100mm a tester, pas garantie. Emetteur/recepteur montes sur les composants de la carte reference : leur espacement et orientation restent a confirmer avant implantation.
+
+
+
+Courants et contraintes
+
+
+
+R101 donne Iir=(Vpower-Vf)/R ; estimation20mA a4,7 V avec Vf1,1 V, cette Vf est une hypothese non garantie a20mA. Sans minimum Vf garanti, borne sure Iir<=5,1/178,2=28,62mA ; c'est bien sous100mA maximum TSAL6200 a25C et compatible avec le derating a35C. P de R101 <=5,1^2/178,2=0,146 W, boitier1206 de0,25 W adequat pour prototype, mesure thermique. Au minimum3,8 V le courant et la portee diminuent ; ne pas annoncer une portee constante. R102 limite la signalisation a<=5,1/990=5,16mA meme en court-circuit LED ; normalement environ2,7mA a4,7 V etVf2 V. Provision35mA par carte, aucun de ces courants n'est tire sur DATA. R107 limite une sortie PIOB accidentellement basse a environ5mA ; ce n'est pas un mode normal, detecter et reinitialiser le latch. Comparateur a faible charge de retour, PIOB fuite<=1uA retenue donc chute serie<=1mV.
+
+
+
+Seuils reels du reseau
+
+
+
+Vref=(Vpower/R104+Vout/R106)/(1/R104+1/R105+1/R106). Avec47k/47k/100k, Vref=0,404858 Vpower+0,190283 Vout. Lorsque A_OPT monte, la sortie actuellement haute bascule basse au seuil haut ; lorsqu'il redescend, la sortie basse bascule haute au seuil bas. Inclure niveaux de sortie, offset et hysteresis interne, pas seulement un diviseur ideal : seuil haut environVref(Voh)+Vh/2+Vos, seuil bas environVref(Vol)-Vh/2+Vos selon convention d'offset.
+
+A5,000 V, sorties ideales0/5 V, Vh typique3,3mV etVos nul : haut2,97736 V, bas2,02264 V, largeur0,95472 V. Avec hypothese realiste Vol0,05 V etVoh4,95 V : haut2,96784 V, bas2,03215 V, largeur0,93569 V. A4,7 V avec sorties ideales : haut2,79882 V, bas1,90118 V. Les valeurs varient avec l'alimentation locale ; ce ne sont pas des references absolues. Les resistances sont1%. Un calcul conservateur a5 V utilisant sorties Voh4,8..5 V etVol0..0,2 V, offset+/-7mV etVh<=6,5mV donne enveloppes d'environ2,903..3,010 V haut et1,990..2,097 V bas. Ces limites d'offset/hysteresis sont tabulees a25C etmode commun0 V, pas garanties a notre mode commun ni sur10..35C : enveloppes d'etude, non garantie industrielle. Mesurer les vrais seuils sur la carte.
+
+A5 V et47k, il faut typiquement Iphoto>63,4uA pour passer absent etIphoto<43,0uA pour passer present ; pour marge optique0,3 V viser A_OPT<1,72 V libre et>3,28 V coupe, soit environ Iphoto>70uA libre et<36,6uA coupe. Adapter ces criteres aux seuils mesures et a la tension3,8..5,1 V. La fuite noire200nA maximum a25C au test20 V produit seulement9,4mV dans47k, mais la lumiere ambiante et la temperature ne sont pas bornees par ce chiffre. Les caracteristiques a1mW/cm2 et les intensites emetteur a100mA ne garantissent pas notre lien a20mA.
+
+
+
+Protection et verification
+
+
+
+D103 protege OW1 contre manipulation ESD ; capacite reelle typique20pF, pas0,3pF du catalogue. Aucun condensateur de decouplage n'est ajoute a DATA. C101 etC102 decouplent seulement ROW1_POWER. Une coupure POWER peut laisser U101 joignable avec detection non fiable ; marquer les etats suspects et tester cette panne, aucune mesure d'alimentation locale n'est disponible. Le numero du casier est enregistre dans l'ESP32 via ROM et bus, jamais grave par ordre de decouverte. Tester niveaux, polarite, seuils, lumiere, alignement, perturbations, et coupure de la nappe hors tension avant une seance de trois heures.
+
